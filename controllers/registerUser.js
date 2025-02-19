@@ -158,15 +158,15 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         console.log("we are in add funds");
         const message = "Select your top-up channel:";
         const buttons = [
-            [{ text: "PayPal", callback_data: "pay_pal" }],
-            [{ text: "Google Pay", callback_data: "google_pay" }],
-            [{ text: "Apple Pay", callback_data: "apple_pay" }],
-            [{ text: "Other payment method", callback_data: "other_payment_method" }],
+            [{ text: "PayPal", callback_data: "add_pay_pal" }],
+            [{ text: "Google Pay", callback_data: "add_google_pay" }],
+            [{ text: "Apple Pay", callback_data: "add_apple_pay" }],
+            [{ text: "Other payment method", callback_data: "add_other_payment_method" }],
             [{ text: "Main Menu", callback_data: "main_menu" }],
         ];
         await sendButtons(chatId, buttons, message, "register_0")
     }
-    else if ((chat.last_message?.startsWith("pay_pal")) || (payload?.startsWith("pay_pal")) || (payload === "pay_pal")) {
+    else if ((chat.last_message?.startsWith("add_pay_pal")) || (payload?.startsWith("add_pay_pal")) || (payload === "add_pay_pal")) {
         console.log("we are in paypal");
         const message = "This payout channel is not available at the moment.";
         const buttons = [
@@ -175,7 +175,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         ];
         await sendButtons(chatId, buttons, message, "register_0");
     }
-    else if ((chat.last_message?.startsWith("google_pay")) || (payload?.startsWith("google_pay")) || (payload === "google_pay")) {
+    else if ((chat.last_message?.startsWith("add_google_pay")) || (payload?.startsWith("add_google_pay")) || (payload === "add_google_pay")) {
         console.log("we are in google pay");
         const message = "This payout channel is not available at the moment.";
         const buttons = [
@@ -184,7 +184,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         ];
         await sendButtons(chatId, buttons, message, "register_0");
     }
-    else if ((chat.last_message?.startsWith("apple_pay")) || (payload?.startsWith("apple_pay")) || (payload === "apple_pay")) {
+    else if ((chat.last_message?.startsWith("add_apple_pay")) || (payload?.startsWith("add_apple_pay")) || (payload === "add_apple_pay")) {
         console.log("we are in apple pay");
         const message = "This payout channel is not available at the moment.";
         const buttons = [
@@ -193,7 +193,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         ];
         await sendButtons(chatId, buttons, message, "register_0");
     }
-    else if ((chat.last_message?.startsWith("other_payment_method")) || (payload?.startsWith("other_payment_method")) || (payload === "other_payment_method")) {
+    else if ((chat.last_message?.startsWith("add_other_payment_method")) || (payload?.startsWith("add_other_payment_method")) || (payload === "add_other_payment_method")) {
         console.log("we are in change method");
         const messageLogin = 'To add funds, please follow the below steps.\n\n 1⃣ Login to InstaPay web portal.\n 2⃣ Go to wallets page and select "Add funds" option from Wallet Management menu.';
         const messageMain = "Click below to log in now.";
