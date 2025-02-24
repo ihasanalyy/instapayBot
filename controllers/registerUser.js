@@ -1,7 +1,8 @@
 
 // import { text } from "body-parser";
 import { sendPhoto, sendMessage, sendButtons } from "../utils/messageHelper.js";
-export async function registerUser(chatId, payload, chat ,  text_message) {
+import jwt from "jsonwebtoken";
+export async function registerUser(chatId, payload, chat, text_message) {
     console.log("text_message in registerUser", text_message)
     // const text_message = data.message.text;
     // console.log("we are checking text", text)
@@ -70,7 +71,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
             [{ text: "🔍 Explore More", callback_data: "explore_more" }],
             [{ text: "🌍 Change Language", callback_data: "language_change" }],
             [{ text: "💬 Chat with us", callback_data: "chat_with_us" }],
-            [{ text: "Run Recieve Req flow", callback_data: "recieve_request"}] //ye ek temp button hai recieve req flow ko run karne ke liye
+            [{ text: "Run Recieve Req flow", callback_data: "recieve_request" }] //ye ek temp button hai recieve req flow ko run karne ke liye
         ];
         await sendButtons(chatId, buttons, message, "Opt_all");
     }
@@ -86,52 +87,72 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         await sendPhoto(chatId, "https://miro.medium.com/v2/resize:fit:828/format:webp/1*7cmKvNClOo6K2cHSXsbW3w.png")
         await sendButtons(chatId, buttons, message, "qr_quickpay");
     }
- 
 
 
 
 
 
 
-
-
-    // my qr code ka flow 
-    else if ((chat.last_message?.startsWith("my_qr_code")) || (payload?.startsWith("my_qr_code")) || (payload === "my_qr_code")) {
+// MY QR CODE WALLET LOGICS
+    
+    const wallets = [
+        { currency: { code: "PKR", symbol: "Fr" }, wallet_id: "LOLOLOL1", qrCode: { url: "https://nodejs-checking-bucket.s3.eu-west-3.amazonaws.com/qrStcikers/ahmed/LOLOLOL1.png" }, status: "active", wallet_type: "insta" },
+        { currency: { code: "PKR", symbol: "Rs" }, wallet_id: "MDJT7FXM", qrCode: { url: "https://nodejs-checking-bucket.s3.eu-west-3.amazonaws.com/qrStcikers/ahmed/MDJT7FXM.png" }, status: "active", wallet_type: "insta" },
+        { currency: { code: "USD", symbol: "$" }, wallet_id: "VYPS9FLV", qrCode: { url: "https://nodejs-checking-bucket.s3.eu-west-3.amazonaws.com/qrStcikers/ahmed/VYPS9FLV.png" }, status: "active", wallet_type: "insta" },
+        { currency: { code: "EUR", symbol: "€" }, wallet_id: "J4OSKFYJ", qrCode: { url: "https://nodejs-checking-bucket.s3.eu-west-3.amazonaws.com/qrStcikers/ahmed/J4OSKFYJ.png" }, status: "active", wallet_type: "insta" },
+        { currency: { code: "PHP", symbol: "₱" }, wallet_id: "X5VTVINX", qrCode: { url: "https://nodejs-checking-bucket.s3.amazonaws.com/qrStcikers/ahmed/X5VTVINX.png" }, status: "active", wallet_type: "insta" },
+        { currency: { code: "RYL", symbol: "ryl" }, wallet_id: "ABCABC", qrCode: {}, status: false, wallet_type: "insta" },
+    ];
+    
+    if (payload === "my_qr_code") {
         console.log("we are in connect account");
-        const message = "Select the Wallet currencey to be credited";
-        const buttons = [
-            [{ text: "🇵🇰 PKR", callback_data: "Pkr_Curr" }],
-            [{ text: "🇺🇸 USD", callback_data: "Usd_Curr" }],
-        ]
-        await sendPhoto(chatId, "https://miro.medium.com/v2/resize:fit:828/format:webp/1*7cmKvNClOo6K2cHSXsbW3w.png")
+        const message = "Select the Wallet currency to be credited";
+        const buttons = wallets.map(wallet => [{
+            text: `${wallet.currency.symbol} ${wallet.currency.code}`,
+            callback_data: `wallet_${wallet.wallet_id}`
+        }]);
+        
+        await sendPhoto(chatId, "https://miro.medium.com/v2/resize:fit:828/format:webp/1*7cmKvNClOo6K2cHSXsbW3w.png");
         await sendButtons(chatId, buttons, message, "my_qr_code");
+    } else if (payload?.startsWith("wallet_")) {
+        const walletId = payload.split("_")[1];
+        const wallet = wallets.find(w => w.wallet_id === walletId);
+    
+        if (wallet && wallet.qrCode?.url) {
+            console.log(`we are in ${wallet.currency.code}_Curr`);
+            const message = `${wallet.currency.code} QR Code🫡`;
+            const buttons = [[{ text: "🏠 Main Menu", callback_data: "main_menu" }]];
+            
+            await sendPhoto(chatId, wallet.qrCode.url);
+            await sendButtons(chatId, buttons, message, `wallet_${wallet.wallet_id}`);
+        } else{
+            console.log("we are in wallet activation");
+            const tokenPayload = {
+                wallet_id: wallet.wallet_id,
+                currency: wallet.currency.code,
+            }
+            const token = jwt.sign(tokenPayload, '123mySecretKey', { expiresIn: '10Minutes' });
+            console.log("Token", token);
+            const walletActivationUrl = `https://my.insta-pay.ch/qr-activate?token=${token}`;
+            console.log("walletActivationUrl", walletActivationUrl);
+            const message = `Your QR code for ${wallet.currency.code} is not activated yet.`;
+            const imgUrl = 'https://nodejs-checking-bucket.s3.eu-west-3.amazonaws.com/chatbot_images/Setting.png';
+            const activateMessage = `Please click below to activate it.`;
+            const buttons = [
+                [{ text: `Activate ${wallet.currency.code} QR code`, url: walletActivationUrl }],
+                [{ text: "🏠 Main Menu", callback_data: "main_menu" }]
+            ];
+            await sendPhoto(chatId, imgUrl, message);
+            await sendButtons(chatId, buttons, activateMessage, `wallet_${wallet.wallet_id}`);
+        } 
     }
-    // pkr currency ka flow
-    else if ((chat.last_message?.startsWith("Pkr_Curr")) || (payload?.startsWith("Pkr_Curr")) || (payload === "Pkr_Curr")) {
-        console.log("we are in Pkr_Curr");
-        const message = "PKR QR Code🫡";
-        const buttons = [
-            [{ text: "🏠 Main Menu", callback_data: "main_menu" }],
-        ]
-        await sendPhoto(chatId, "https://nmgprod.s3.amazonaws.com/media/files/c4/89/c489299ae466b3478d86d95c60d07b7a/cover_image_1659989989.jpg.760x400_q85_crop_upscale.jpg")
-        await sendButtons(chatId, buttons, message, "Pkr_Curr");
-    }
-    // usd currency ka flow
-    else if ((chat.last_message?.startsWith("Usd_Curr")) || (payload?.startsWith("Usd_Curr")) || (payload === "Usd_Curr")) {
-        console.log("we are in Pkr_Curr");
-        const message = "USD QR Code🫡";
-        const buttons = [
-            [{ text: "🏠 Main Menu", callback_data: "main_menu" }],
-        ]
-        await sendPhoto(chatId, "https://nmgprod.s3.amazonaws.com/media/files/c4/89/c489299ae466b3478d86d95c60d07b7a/cover_image_1659989989.jpg.760x400_q85_crop_upscale.jpg")
-        await sendButtons(chatId, buttons, message, "Usd_Curr");
-    }
+    
     // User se QR Code ya Alphanumeric Code mangwana
-    else if ((chat.last_message?.startsWith("alpha_num_code")) || (payload?.startsWith("alpha_num_code")) || (payload === "alpha_num_code")) {
+    if ((chat.last_message?.startsWith("alpha_num_code")) || (payload?.startsWith("alpha_num_code")) || (payload === "alpha_num_code")) {
         console.log("we are in alpha_num_code");
         const message = "Please enter the alphanumeric wallet code";
         await sendMessage(chatId, message, "alpha_num_code");
-    } 
+    }
     // scan qr code ka flow
     // else if ((chat.last_message?.startsWith("scan_qr_code")) || (payload?.startsWith("scan_qr_code")) || (payload === "scan_qr_code")) {
     //     console.log("we are in scan_qr_code");
@@ -141,7 +162,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
 
     // yahan se hassan ka code hai
 
-    
+
     else if ((chat.last_message?.startsWith("wallet_overview")) || (payload?.startsWith("wallet_overview")) || (payload === "wallet_overview")) {
         console.log("we are in wallet overview");
         const message = "🇵🇰 Wallet Currency: PKR\n💳 Wallet ID: 5RMIOSO7\n💰 Wallet Balance: Rs0.00";
@@ -656,7 +677,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
         const message = "Input the email address you want to invite."
         await sendMessage(chatId, message, "register_0")
     }
-    
+
     else if ((chat.last_message?.startsWith("send_invitation")) || (payload?.startsWith("send_invitation")) || (payload === "send_invitation")) {
         console.log("we are in send invitation");
         const message = "Your invite to +923001234567/abc@gmail.com has been sent successfully!";
@@ -714,7 +735,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
             [{ text: "Attach a document", callback_data: "attach_a_document" }],
             [{ text: "Skip", callback_data: "dir_skipped" }],
         ];
-       await sendButtons(chatId, buttons, message, "register_0")
+        await sendButtons(chatId, buttons, message, "register_0")
     }
     else if ((chat.last_message?.startsWith("add_a_note") && payload?.startsWith("add_a_note")) || (payload === "add_a_note")) {
         console.log("we are in add a note");
@@ -817,7 +838,7 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
             [{ text: "🇨🇮 XOF", callback_data: "accept_xof_currency" }],
             [{ text: "Main Menu", callback_data: "main_menu" }],
         ];
-        
+
         await sendButtons(chatId, buttons, message, "register_0")
     }
     else if ((chat.last_message?.startsWith("accept_pkr_currency") && payload?.startsWith("accept_pkr_currency")) || (payload === "accept_pkr_currency")) {
@@ -891,5 +912,5 @@ export async function registerUser(chatId, payload, chat ,  text_message) {
 
 
 
- 
+
 }    
